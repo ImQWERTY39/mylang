@@ -1,119 +1,148 @@
-use std::collections::HashMap;
+use super::{data::DataType, Scope};
 
-use super::data::{get_value_type, DataType, ValueType};
-
-pub fn create_new_variable(scope: &mut HashMap<String, DataType>, type_: &str, name: &str) {
-    scope.entry(name.to_string()).or_insert(match type_ {
+pub fn create_var(local_scope: &mut Scope, type_: &str, name: &str) {
+    let data = match type_ {
         "int" => DataType::Integer(None),
-        "float" => DataType::Float(None),
         "bool" => DataType::Boolean(None),
-        "String" => DataType::String(None),
+        "float" => DataType::Float(None),
         "char" => DataType::Character(None),
+        "String" => DataType::String(None),
         _ => unimplemented!(),
+    };
+
+    local_scope.insert(name.to_owned(), data);
+}
+
+pub fn set_var(global_scope: &mut Scope, local_scope: &mut Scope, name: &str, value: &str) {
+    get_from_scopes_mut(local_scope, global_scope, name).set_value(value);
+}
+
+pub fn is_equal(
+    global_scope: &mut Scope,
+    local_scope: &mut Scope,
+    var1: &str,
+    var2: &str,
+    assign_to: &str,
+) {
+    let variable1 = get_from_scopes(local_scope, global_scope, var1).clone();
+    let variable2 = get_from_scopes(local_scope, global_scope, var2).clone();
+
+    get_from_scopes_mut(local_scope, global_scope, assign_to).set_value(
+        if variable1 == variable2 {
+            "true"
+        } else {
+            "false"
+        },
+    );
+}
+
+pub fn is_not_equal(
+    global_scope: &mut Scope,
+    local_scope: &mut Scope,
+    var1: &str,
+    var2: &str,
+    assign_to: &str,
+) {
+    let variable1 = get_from_scopes(local_scope, global_scope, var1).clone();
+    let variable2 = get_from_scopes(local_scope, global_scope, var2).clone();
+
+    get_from_scopes_mut(local_scope, global_scope, assign_to).set_value(
+        if variable1 != variable2 {
+            "true"
+        } else {
+            "false"
+        },
+    );
+}
+
+pub fn is_less_than(
+    global_scope: &mut Scope,
+    local_scope: &mut Scope,
+    var1: &str,
+    var2: &str,
+    assign_to: &str,
+) {
+    let variable1 = get_from_scopes(local_scope, global_scope, var1).clone();
+    let variable2 = get_from_scopes(local_scope, global_scope, var2).clone();
+
+    get_from_scopes_mut(local_scope, global_scope, assign_to).set_value(if variable1 < variable2 {
+        "true"
+    } else {
+        "false"
     });
 }
 
-pub fn set_var(
-    global_scope: &mut HashMap<String, DataType>,
-    local_scope: &mut HashMap<String, DataType>,
-    name: &str,
-    value: &str,
+pub fn is_less_than_equal(
+    global_scope: &mut Scope,
+    local_scope: &mut Scope,
+    var1: &str,
+    var2: &str,
+    assign_to: &str,
 ) {
-    let value_type = get_value_type(value);
+    let variable1 = get_from_scopes(local_scope, global_scope, var1).clone();
+    let variable2 = get_from_scopes(local_scope, global_scope, var2).clone();
 
-    match value_type {
-        ValueType::Identifier(ident) => {
-            let other_variable = match local_scope.get(&ident) {
-                Some(i) => i.clone(),
-                None => match global_scope.get(&ident) {
-                    Some(i) => i.clone(),
-                    None => panic!(),
-                },
-            };
+    get_from_scopes_mut(local_scope, global_scope, assign_to).set_value(
+        if variable1 <= variable2 {
+            "true"
+        } else {
+            "false"
+        },
+    );
+}
 
-            let variable_to_change = get_val_mut(global_scope, local_scope, name);
+pub fn is_greater_than(
+    global_scope: &mut Scope,
+    local_scope: &mut Scope,
+    var1: &str,
+    var2: &str,
+    assign_to: &str,
+) {
+    let variable1 = get_from_scopes(local_scope, global_scope, var1).clone();
+    let variable2 = get_from_scopes(local_scope, global_scope, var2).clone();
 
-            if !variable_to_change.same_type(&other_variable) {
-                panic!("{:?} | {:?}", variable_to_change, other_variable);
-            }
+    get_from_scopes_mut(local_scope, global_scope, assign_to).set_value(if variable1 > variable2 {
+        "true"
+    } else {
+        "false"
+    });
+}
 
-            *variable_to_change = other_variable;
-        }
-        ValueType::Integer(i) => {
-            let variable_to_change = get_val_mut(global_scope, local_scope, name);
+pub fn is_greater_than_equal(
+    global_scope: &mut Scope,
+    local_scope: &mut Scope,
+    var1: &str,
+    var2: &str,
+    assign_to: &str,
+) {
+    let variable1 = get_from_scopes(local_scope, global_scope, var1).clone();
+    let variable2 = get_from_scopes(local_scope, global_scope, var2).clone();
 
-            if !matches!(variable_to_change, DataType::Integer(_)) {
-                panic!();
-            }
+    get_from_scopes_mut(local_scope, global_scope, assign_to).set_value(
+        if variable1 >= variable2 {
+            "true"
+        } else {
+            "false"
+        },
+    );
+}
 
-            *variable_to_change = DataType::Integer(Some(i))
-        }
-        ValueType::Float(i) => {
-            let variable_to_change = get_val_mut(global_scope, local_scope, name);
-
-            if !matches!(variable_to_change, DataType::Float(_)) {
-                panic!();
-            }
-
-            *variable_to_change = DataType::Float(Some(i))
-        }
-        ValueType::Boolean(i) => {
-            let variable_to_change = get_val_mut(global_scope, local_scope, name);
-
-            if !matches!(variable_to_change, DataType::Boolean(_)) {
-                panic!();
-            }
-
-            *variable_to_change = DataType::Boolean(Some(i))
-        }
-        ValueType::Character(i) => {
-            let variable_to_change = get_val_mut(global_scope, local_scope, name);
-
-            if !matches!(variable_to_change, DataType::String(_)) {
-                panic!();
-            }
-
-            *variable_to_change = DataType::Character(Some(i))
-        }
-        ValueType::String(i) => {
-            let variable_to_change = get_val_mut(global_scope, local_scope, name);
-
-            if !matches!(variable_to_change, DataType::String(_)) {
-                panic!();
-            }
-
-            *variable_to_change = DataType::String(Some(i))
-        }
+fn get_from_scopes<'a>(scope1: &'a Scope, scope2: &'a Scope, variable: &str) -> &'a DataType {
+    if scope1.contains_key(variable) {
+        scope1.get(variable).unwrap()
+    } else {
+        scope2.get(variable).unwrap()
     }
 }
 
-pub fn get_val<'a>(
-    global_scope: &'a HashMap<String, DataType>,
-    local_scope: &'a HashMap<String, DataType>,
-    name: &'a str,
-) -> &'a DataType {
-    match local_scope.get(name) {
-        Some(i) => return i,
-        None => (),
-    }
-    match global_scope.get(name) {
-        Some(i) => return i,
-        None => panic!(),
-    }
-}
-
-pub fn get_val_mut<'a>(
-    global_scope: &'a mut HashMap<String, DataType>,
-    local_scope: &'a mut HashMap<String, DataType>,
-    name: &'a str,
+fn get_from_scopes_mut<'a>(
+    scope1: &'a mut Scope,
+    scope2: &'a mut Scope,
+    variable: &str,
 ) -> &'a mut DataType {
-    match local_scope.get_mut(name) {
-        Some(i) => return i,
-        None => (),
-    }
-
-    match global_scope.get_mut(name) {
-        Some(i) => return i,
-        None => panic!(),
+    if scope1.contains_key(variable) {
+        scope1.get_mut(variable).unwrap()
+    } else {
+        scope2.get_mut(variable).unwrap()
     }
 }

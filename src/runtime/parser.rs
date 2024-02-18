@@ -1,6 +1,18 @@
-use super::constants::INSTRUCTIONS;
+const INSTRUCTIONS: [&str; 11] = [
+    "FUNC",
+    "END",
+    "CREATE_VAR",
+    "SET_VAR",
+    "EQ",
+    "NE",
+    "LT",
+    "LE",
+    "GT",
+    "GE",
+    "SHOW_ALL",
+];
 
-pub fn parse_line(line: &str) -> Result<Vec<String>, &str> {
+pub fn parse_line(line: &str) -> Result<Vec<String>, String> {
     let mut line_vec = Vec::new();
     let mut instruction = String::new();
 
@@ -17,9 +29,8 @@ pub fn parse_line(line: &str) -> Result<Vec<String>, &str> {
         instruction.push(current_character);
     }
 
-    if !INSTRUCTIONS.contains(&instruction.as_str()) && instruction != "SHOW" {
-        println!("{:?}", instruction);
-        return Err("instruction not found");
+    if !INSTRUCTIONS.contains(&instruction.as_str()) {
+        return Err(format!("Instruction not found: {instruction}"));
     }
 
     line_vec.push(instruction);
@@ -49,7 +60,6 @@ pub fn parse_line(line: &str) -> Result<Vec<String>, &str> {
             arg = String::new();
 
             current_index += 1;
-
             continue;
         } else if current_character == '\\' && in_string {
             let next_character = line.chars().nth(current_index + 1).unwrap();
@@ -67,10 +77,11 @@ pub fn parse_line(line: &str) -> Result<Vec<String>, &str> {
             } else if next_character == '"' {
                 arg.push('"');
             } else {
-                return Err("invalid escape");
+                return Err("invalid escape".to_owned());
             }
 
             current_index += 2;
+            continue;
         } else if current_character == '\'' && !in_string {
             let mut char_arg = String::from(current_character);
             let next_character = line.chars().nth(current_index + 1).unwrap();
@@ -92,11 +103,11 @@ pub fn parse_line(line: &str) -> Result<Vec<String>, &str> {
                 } else if next2_character == '\'' {
                     char_arg.push('\'');
                 } else {
-                    return Err("invalid escape character");
+                    return Err("invalid escape character".to_owned());
                 }
 
                 if next3_character != '\'' {
-                    return Err("character not closed");
+                    return Err("character not closed".to_owned());
                 }
 
                 char_arg.push(next3_character);
@@ -117,7 +128,7 @@ pub fn parse_line(line: &str) -> Result<Vec<String>, &str> {
     }
 
     if in_string {
-        return Err("string not closed");
+        return Err("string not closed".to_owned());
     }
 
     if !arg.is_empty() {
