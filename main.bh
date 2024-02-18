@@ -1,0 +1,13 @@
+FUNC main
+
+CREATE_VAR float v1
+SET_VAR v1 12
+
+CREATE_VAR int v2
+SET_VAR v2 12
+
+CREATE_VAR bool v3
+GT v1 v2 v3
+SHOW_ALL
+
+END
